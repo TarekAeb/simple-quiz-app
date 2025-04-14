@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle } from 'lucide-react';
-import { QuizQuestion } from '@/context/PresentationContext';
+import { CheckCircle, XCircle, Award } from 'lucide-react';
+import { QuizQuestion, usePresentation } from '@/context/PresentationContext';
 
 type QuestionSlideProps = {
   isActive: boolean;
@@ -18,8 +18,13 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
   questionNumber, 
   totalQuestions 
 }) => {
+  const { sections } = usePresentation();
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
+  
+  const currentSection = sections.find(s => 
+    s.name.toLowerCase().includes(question.section)
+  );
   
   const handleSelectAnswer = (answer: string) => {
     if (!showAnswer) {
@@ -56,28 +61,37 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
             Question {questionNumber} of {totalQuestions}
           </h2>
           
-          <div className="flex gap-4">
-            <Button 
-              onClick={revealAnswer} 
-              variant="outline" 
-              className="border-2 border-algeria-green text-algeria-green hover:bg-algeria-green hover:text-white"
-              disabled={selectedAnswer === null || showAnswer}
-            >
-              Reveal Answer
-            </Button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Award className="w-6 h-6 text-algeria-green" />
+              <span className="font-bold text-algeria-green">
+                {currentSection?.points || 1} points
+              </span>
+            </div>
             
-            <Button 
-              onClick={resetQuestion} 
-              variant="outline" 
-              className="border-2 border-algeria-red text-algeria-red hover:bg-algeria-red hover:text-white"
-              disabled={!showAnswer && selectedAnswer === null}
-            >
-              Reset
-            </Button>
+            <div className="flex gap-4">
+              <Button 
+                onClick={revealAnswer} 
+                variant="outline" 
+                className="border-2 border-algeria-green text-algeria-green hover:bg-algeria-green hover:text-white transition-all duration-300 transform hover:scale-105"
+                disabled={selectedAnswer === null || showAnswer}
+              >
+                Reveal Answer
+              </Button>
+              
+              <Button 
+                onClick={resetQuestion} 
+                variant="outline" 
+                className="border-2 border-algeria-red text-algeria-red hover:bg-algeria-red hover:text-white transition-all duration-300 transform hover:scale-105"
+                disabled={!showAnswer && selectedAnswer === null}
+              >
+                Reset
+              </Button>
+            </div>
           </div>
         </div>
         
-        <Card className="p-6 border-2 border-algeria-green shadow-lg mb-8">
+        <Card className="p-6 border-2 border-algeria-green shadow-lg mb-8 transform transition-all duration-500 hover:shadow-2xl">
           <h3 className="text-3xl font-bold mb-6 text-center text-algeria-green">
             {question.question}
           </h3>
@@ -87,7 +101,7 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
           {question.options.map((option, index) => (
             <Card 
               key={index}
-              className={`p-6 border-2 cursor-pointer transition-all duration-300 ${
+              className={`p-6 border-2 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                 selectedAnswer === option
                   ? showAnswer
                     ? option === question.correctAnswer
@@ -106,11 +120,11 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
                 </p>
                 
                 {showAnswer && option === question.correctAnswer && (
-                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  <CheckCircle className="w-6 h-6 text-green-500 animate-bounce" />
                 )}
                 
                 {showAnswer && selectedAnswer === option && option !== question.correctAnswer && (
-                  <XCircle className="w-6 h-6 text-red-500" />
+                  <XCircle className="w-6 h-6 text-red-500 animate-shake" />
                 )}
               </div>
             </Card>
@@ -118,10 +132,12 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
         </div>
         
         {showAnswer && (
-          <div className={`text-center p-4 rounded-lg ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+          <div className={`text-center p-4 rounded-lg transform transition-all duration-500 animate-fade-in ${isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
             <p className="text-xl font-bold">
               {isCorrect ? (
-                <span className="text-green-600">Correct answer! Award a point to the team.</span>
+                <span className="text-green-600">
+                  Correct answer! Award {currentSection?.points || 1} point(s) to the team.
+                </span>
               ) : (
                 <span className="text-red-600">
                   Incorrect. The correct answer is: {question.correctAnswer}
