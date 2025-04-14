@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
 import { QuizQuestion, usePresentation } from '@/context/PresentationContext';
+import FirstAnswerDetector from './FirstAnswerDetector';
 
 type QuestionSlideProps = {
   isActive: boolean;
@@ -49,6 +49,26 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
     }
   }, [isActive]);
   
+  const { 
+    currentRound,
+    activeTeam,
+    switchActiveTeam,
+    firstAnswerTeam,
+    setFirstAnswerTeam
+  } = usePresentation();
+
+  const handleTimeUp = () => {
+    if (currentRound === 2 && !firstAnswerTeam) {
+      setFirstAnswerTeam(null);
+    }
+  };
+
+  React.useEffect(() => {
+    if (!isActive) {
+      setFirstAnswerTeam(null);
+    }
+  }, [isActive, setFirstAnswerTeam]);
+
   return (
     <div 
       className={`fullscreen-slide algeria-pattern ${
@@ -56,6 +76,25 @@ const QuestionSlide: React.FC<QuestionSlideProps> = ({
       }`}
     >
       <div className="container mx-auto max-w-5xl">
+        {/* Active Team Indicator */}
+        {currentRound === 1 && (
+          <div className="mb-4 text-center">
+            <h3 className={`text-xl font-bold ${
+              activeTeam === 1 ? 'text-algeria-green' : 'text-algeria-red'
+            }`}>
+              {activeTeam === 1 ? 'Team 1' : 'Team 2'}'s Turn
+            </h3>
+          </div>
+        )}
+
+        {/* First Answer Detector */}
+        {isActive && (
+          <FirstAnswerDetector
+            onTimeUp={handleTimeUp}
+            timeLimit={currentRound === 2 ? 5 : 30}
+          />
+        )}
+
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-algeria-green">
             Question {questionNumber} of {totalQuestions}

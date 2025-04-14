@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Team = {
@@ -44,6 +43,12 @@ type PresentationContextType = {
   incrementScore: (teamNumber: 1 | 2, section: keyof Team['scores']) => void;
   decrementScore: (teamNumber: 1 | 2, section: keyof Team['scores']) => void;
   resetScores: () => void;
+  currentRound: 1 | 2;
+  activeTeam: 1 | 2;
+  firstAnswerTeam: 1 | 2 | null;
+  setFirstAnswerTeam: (team: 1 | 2 | null) => void;
+  startNewGame: () => void;
+  switchActiveTeam: () => void;
 };
 
 const historyQuestions: QuizQuestion[] = [
@@ -199,7 +204,6 @@ const interestingFacts: FactSlide[] = [
 
 const ADMIN_PASSWORD = "april16";
 
-// Create the context
 const PresentationContext = createContext<PresentationContextType | undefined>(undefined);
 
 export const PresentationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -219,6 +223,10 @@ export const PresentationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const totalQuestions = sections.reduce((acc, section) => acc + section.questions.length, 0);
   const totalSlides = 2 + totalQuestions + facts.length + 1; // intro + rules + questions + facts + scoreboard
+
+  const [currentRound, setCurrentRound] = useState<1 | 2>(1);
+  const [activeTeam, setActiveTeam] = useState<1 | 2>(Math.random() < 0.5 ? 1 : 2);
+  const [firstAnswerTeam, setFirstAnswerTeam] = useState<1 | 2 | null>(null);
 
   const handleNext = () => {
     if (currentSlide < totalSlides - 1) {
@@ -299,6 +307,16 @@ export const PresentationProvider: React.FC<{ children: ReactNode }> = ({ childr
     });
   };
 
+  const startNewGame = () => {
+    setActiveTeam(Math.random() < 0.5 ? 1 : 2);
+    setCurrentRound(1);
+    resetScores();
+  };
+
+  const switchActiveTeam = () => {
+    setActiveTeam(activeTeam === 1 ? 2 : 1);
+  };
+
   return (
     <PresentationContext.Provider
       value={{
@@ -316,6 +334,12 @@ export const PresentationProvider: React.FC<{ children: ReactNode }> = ({ childr
         incrementScore,
         decrementScore,
         resetScores,
+        currentRound,
+        activeTeam,
+        firstAnswerTeam,
+        setFirstAnswerTeam,
+        startNewGame,
+        switchActiveTeam,
       }}
     >
       {children}
