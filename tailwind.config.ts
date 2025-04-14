@@ -1,146 +1,49 @@
-
-import type { Config } from "tailwindcss";
-
+/** @type {import('tailwindcss').Config} */
 export default {
-	darkMode: ["class"],
 	content: [
-		"./pages/**/*.{ts,tsx}",
-		"./components/**/*.{ts,tsx}",
-		"./app/**/*.{ts,tsx}",
-		"./src/**/*.{ts,tsx}",
+	  "./index.html",
+	  "./src/**/*.{js,ts,jsx,tsx}",
 	],
-	prefix: "",
 	theme: {
-		container: {
-			center: true,
-			padding: '2rem',
-			screens: {
-				'2xl': '1400px'
-			}
+	  extend: {
+		backgroundImage: {
+'algerian-pattern': "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDgwIDgwIj48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNERUJBM0UiIHN0cm9rZS13aWR0aD0iMC41IiBvcGFjaXR5PSIwLjEiPjxwYXRoIGQ9Ik00MCA0MG0tMzUgMGEzNSAzNSAwIDEgMCA3MCAwIDM1IDM1IDAgMSAwLTcwIDBaIi8+PHBhdGggZD0iTTQwIDQwbTAgLTI1YTI1IDI1IDAgMSAwIDAgNTAgMjUgMjUgMCAxIDAgMCAtNTBaIi8+PHBhdGggZD0iTTIwIDIwbDQwIDQwTTYwIDIwTDIwIDYwIi8+PC9nPjwvc3ZnPg==')",		  },
+		colors: {
+			primary: {
+				light: '#1A6741', // Using algerian-green-light
+				DEFAULT: '#0F5132', // Using algerian-green
+				dark: '#0A3C25', // Using algerian-green-dark
+			  },
+			  secondary: '#DEBA3E', // Using algerian-gold
+		  success: '#22c55e',
+		  error: '#ef4444',
+		  dark: '#1e293b',
+		  light: '#f8fafc',
+		  'algerian-green-light': '#1A6741',
+		  'algerian-green': '#0F5132',
+		  'algerian-green-dark': '#0A3C25',
+		  'algerian-red': '#D21034',
+		  'algerian-gold': '#DEBA3E',
+		  'scholar-amber': '#F0A830',
+		  'islamic-blue-light': '#355C7D',
+		  'islamic-blue': '#2A4A66',
+		  'islamic-blue-dark':'#1E384D',
+		  'algerian-light': '#F5F5F5',
 		},
-		extend: {
-			colors: {
-				border: 'hsl(var(--border))',
-				input: 'hsl(var(--input))',
-				ring: 'hsl(var(--ring))',
-				background: 'hsl(var(--background))',
-				foreground: 'hsl(var(--foreground))',
-				primary: {
-					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
-				},
-				secondary: {
-					DEFAULT: 'hsl(var(--secondary))',
-					foreground: 'hsl(var(--secondary-foreground))'
-				},
-				destructive: {
-					DEFAULT: 'hsl(var(--destructive))',
-					foreground: 'hsl(var(--destructive-foreground))'
-				},
-				muted: {
-					DEFAULT: 'hsl(var(--muted))',
-					foreground: 'hsl(var(--muted-foreground))'
-				},
-				accent: {
-					DEFAULT: 'hsl(var(--accent))',
-					foreground: 'hsl(var(--accent-foreground))'
-				},
-				popover: {
-					DEFAULT: 'hsl(var(--popover))',
-					foreground: 'hsl(var(--popover-foreground))'
-				},
-				card: {
-					DEFAULT: 'hsl(var(--card))',
-					foreground: 'hsl(var(--card-foreground))'
-				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
-				},
-				algeria: {
-					green: '#006233',
-					red: '#d21034',
-					white: '#ffffff',
-				}
-			},
-			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
-			},
-			keyframes: {
-				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
-				},
-				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
-				},
-				'fade-in': {
-					'0%': {
-						opacity: '0',
-						transform: 'translateY(10px)'
-					},
-					'100%': {
-						opacity: '1',
-						transform: 'translateY(0)'
-					}
-				},
-				'fade-out': {
-					'0%': {
-						opacity: '1',
-						transform: 'translateY(0)'
-					},
-					'100%': {
-						opacity: '0',
-						transform: 'translateY(10px)'
-					}
-				},
-				'slide-in': {
-					'0%': {
-						opacity: '0',
-						transform: 'translateX(100%)'
-					},
-					'100%': {
-						opacity: '1',
-						transform: 'translateX(0)'
-					}
-				},
-				'slide-out': {
-					'0%': {
-						opacity: '1',
-						transform: 'translateX(0)'
-					},
-					'100%': {
-						opacity: '0',
-						transform: 'translateX(-100%)'
-					}
-				}
-			},
-			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fade-in 0.5s ease-out',
-				'fade-out': 'fade-out 0.5s ease-out',
-				'slide-in': 'slide-in 0.5s ease-out',
-				'slide-out': 'slide-out 0.5s ease-out'
-			}
-		}
+		animation: {
+		  'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+		  'bounce-once': 'bounce 0.5s',
+		  'shake': 'shake 0.5s ease-in-out',
+		},
+		keyframes: {
+		  shake: {
+			'0%, 100%': { transform: 'translateX(0)' },
+			'25%': { transform: 'translateX(-5px)' },
+			'50%': { transform: 'translateX(5px)' },
+			'75%': { transform: 'translateX(-5px)' },
+		  }
+		},
+	  },
 	},
-	plugins: [require("tailwindcss-animate")],
-} satisfies Config;
+	plugins: [],
+  }
