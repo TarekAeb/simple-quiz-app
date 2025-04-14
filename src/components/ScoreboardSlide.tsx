@@ -8,10 +8,14 @@ import { usePresentation } from '@/context/PresentationContext';
 const ScoreboardSlide: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const { team1, team2, incrementScore, decrementScore, resetScores } = usePresentation();
   
+  // Calculate total scores for each team
+  const team1Total = Object.values(team1.scores).reduce((sum, score) => sum + score, 0);
+  const team2Total = Object.values(team2.scores).reduce((sum, score) => sum + score, 0);
+  
   const winnerText = () => {
-    if (team1.score > team2.score) {
+    if (team1Total > team2Total) {
       return `${team1.name} Wins!`;
-    } else if (team2.score > team1.score) {
+    } else if (team2Total > team1Total) {
       return `${team2.name} Wins!`;
     } else {
       return "It's a Tie!";
@@ -47,13 +51,13 @@ const ScoreboardSlide: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             
             <div className="flex justify-center items-center mb-6">
               <div className="text-6xl font-bold w-24 h-24 rounded-full bg-algeria-green text-white flex items-center justify-center">
-                {team1.score}
+                {team1Total}
               </div>
             </div>
             
             <div className="flex justify-center gap-2">
               <Button 
-                onClick={() => incrementScore(1)}
+                onClick={() => incrementScore(1, 'history')}
                 variant="outline" 
                 className="border-2 border-algeria-green"
                 size="icon"
@@ -62,11 +66,11 @@ const ScoreboardSlide: React.FC<{ isActive: boolean }> = ({ isActive }) => {
               </Button>
               
               <Button 
-                onClick={() => decrementScore(1)}
+                onClick={() => decrementScore(1, 'history')}
                 variant="outline" 
                 className="border-2 border-algeria-red"
                 size="icon"
-                disabled={team1.score <= 0}
+                disabled={team1Total <= 0}
               >
                 <ChevronDown className="w-5 h-5 text-algeria-red" />
               </Button>
@@ -81,13 +85,13 @@ const ScoreboardSlide: React.FC<{ isActive: boolean }> = ({ isActive }) => {
             
             <div className="flex justify-center items-center mb-6">
               <div className="text-6xl font-bold w-24 h-24 rounded-full bg-algeria-red text-white flex items-center justify-center">
-                {team2.score}
+                {team2Total}
               </div>
             </div>
             
             <div className="flex justify-center gap-2">
               <Button 
-                onClick={() => incrementScore(2)}
+                onClick={() => incrementScore(2, 'history')}
                 variant="outline" 
                 className="border-2 border-algeria-green"
                 size="icon"
@@ -96,11 +100,11 @@ const ScoreboardSlide: React.FC<{ isActive: boolean }> = ({ isActive }) => {
               </Button>
               
               <Button 
-                onClick={() => decrementScore(2)}
+                onClick={() => decrementScore(2, 'history')}
                 variant="outline" 
                 className="border-2 border-algeria-red"
                 size="icon"
-                disabled={team2.score <= 0}
+                disabled={team2Total <= 0}
               >
                 <ChevronDown className="w-5 h-5 text-algeria-red" />
               </Button>

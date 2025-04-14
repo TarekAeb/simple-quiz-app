@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Team = {
@@ -49,7 +50,8 @@ const historyQuestions: QuizQuestion[] = [
   {
     question: "In what year was Abdelhamid Ben Badis born?",
     options: ["1889", "1895", "1900", "1905"],
-    correctAnswer: "1889"
+    correctAnswer: "1889",
+    section: "history"
   },
   {
     question: "Which organization did Ibn Badis found in 1931?",
@@ -59,7 +61,8 @@ const historyQuestions: QuizQuestion[] = [
       "Algerian National Liberation Front",
       "Algerian Islamic Society"
     ],
-    correctAnswer: "Association of Algerian Muslim Ulama"
+    correctAnswer: "Association of Algerian Muslim Ulama",
+    section: "history"
   },
   {
     question: "What famous slogan is associated with Ibn Badis's nationalist movement?",
@@ -69,7 +72,8 @@ const historyQuestions: QuizQuestion[] = [
       "One Nation, One Voice",
       "Education is the path to liberation"
     ],
-    correctAnswer: "Islam is our religion, Arabic is our language, Algeria is our country"
+    correctAnswer: "Islam is our religion, Arabic is our language, Algeria is our country",
+    section: "history"
   },
   {
     question: "What newspaper did Ibn Badis establish in 1925?",
@@ -79,12 +83,14 @@ const historyQuestions: QuizQuestion[] = [
       "Al-Jazeera",
       "Al-Bashir"
     ],
-    correctAnswer: "Al-Muntaqid"
+    correctAnswer: "Al-Muntaqid",
+    section: "history"
   },
   {
     question: "In what year did Ibn Badis pass away?",
     options: ["1930", "1940", "1950", "1960"],
-    correctAnswer: "1940"
+    correctAnswer: "1940",
+    section: "history"
   },
   {
     question: "What was the primary goal of Ibn Badis's educational reforms?",
@@ -94,7 +100,8 @@ const historyQuestions: QuizQuestion[] = [
       "To focus exclusively on religious education",
       "To promote Western secularism"
     ],
-    correctAnswer: "To promote Algerian identity and resist French cultural assimilation"
+    correctAnswer: "To promote Algerian identity and resist French cultural assimilation",
+    section: "history"
   },
   {
     question: "What important date does the April 16 'Knowledge Day' commemorate?",
@@ -104,12 +111,14 @@ const historyQuestions: QuizQuestion[] = [
       "The founding of the Association of Algerian Muslim Ulama",
       "The Algerian independence day"
     ],
-    correctAnswer: "The death of Ibn Badis"
+    correctAnswer: "The death of Ibn Badis",
+    section: "history"
   },
   {
     question: "Which city in Algeria was Ibn Badis born in?",
     options: ["Constantine", "Algiers", "Oran", "Annaba"],
-    correctAnswer: "Constantine"
+    correctAnswer: "Constantine",
+    section: "history"
   }
 ];
 
@@ -189,6 +198,9 @@ const interestingFacts: FactSlide[] = [
 ];
 
 const ADMIN_PASSWORD = "april16";
+
+// Create the context
+const PresentationContext = createContext<PresentationContextType | undefined>(undefined);
 
 export const PresentationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
