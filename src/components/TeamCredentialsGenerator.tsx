@@ -27,8 +27,8 @@ const TeamCredentialsGenerator: React.FC<TeamCredentialsGeneratorProps> = ({
   // Static passwords - not shown to moderator
   const getStaticPassword = (teamId: number) => {
     // Using fixed passwords that aren't shown in the UI
-    const passwords = ['TEAM1PWD', 'TEAM2PWD'];
-    return passwords[teamId] || `TEAM${teamId+1}PWD`;
+    const passwords = ['m1PTeMa', 'm2PTeMa'];
+    return passwords[teamId] || `m${teamId+1}PTeMa`;
   };
   
   // Generate credentials when component mounts or gameCode changes
@@ -98,10 +98,10 @@ const TeamCredentialsGenerator: React.FC<TeamCredentialsGeneratorProps> = ({
                 </p>
                 
                 <div className="mt-3 w-full">
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span className="text-xs text-gray-500">Password:</span>
                     <span className="text-xs font-mono font-bold">{cred.password}</span>
-                  </div>
+                  </div> */}
                   <div className="mt-1 text-xs text-gray-500 break-all">
                     <span>URL: {getJoinUrl(cred.teamId)}</span>
                   </div>

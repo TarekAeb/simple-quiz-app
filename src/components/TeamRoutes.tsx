@@ -16,8 +16,8 @@ const TeamRoutes: React.FC = () => {
   
   // Get static passwords
   const getStaticPassword = (id: number) => {
-    const passwords = ['TEAM1PWD', 'TEAM2PWD'];
-    return passwords[id] || `TEAM${id+1}PWD`;
+    const passwords = ['m2PTeMa', 'm2PTeMa'];
+    return passwords[id] || `m${id+1}PTeMa`;
   };
   
   // Auto-login if teamId is provided
