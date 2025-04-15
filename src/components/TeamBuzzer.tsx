@@ -1,100 +1,86 @@
-import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 interface TeamBuzzerProps {
   teamName: string;
   teamId: number;
   gameCode: string;
-  onBuzz: (teamId: number) => void;
+  onBuzz: () => void;
   isBuzzed: boolean;
-  isMyTurn: boolean;
+  connectionStatus: 'connected' | 'connecting' | 'error';
   hasNextQuestion: boolean;
 }
 
-const TeamBuzzer: React.FC<TeamBuzzerProps> = ({ 
-  teamName, 
-  teamId, 
-  gameCode, 
-  onBuzz, 
-  isBuzzed, 
-  isMyTurn,
-  hasNextQuestion
+const TeamBuzzer: React.FC<TeamBuzzerProps> = ({
+  teamName,
+  teamId,
+  gameCode,
+  onBuzz,
+  isBuzzed,
+  connectionStatus,
+  hasNextQuestion,
 }) => {
-  const [cooldown, setCooldown] = useState(false);
-  const [questionStatus, setQuestionStatus] = useState<string>("waiting");
-  
-  // Reset cooldown when a new question is available
-  useEffect(() => {
-    if (hasNextQuestion) {
-      setCooldown(false);
-      setQuestionStatus("ready");
-    } else {
-      setQuestionStatus("no_questions");
-    }
-  }, [hasNextQuestion]);
-  
+  // Add vibration when user buzzes in
   const handleBuzz = () => {
-    if (cooldown || isBuzzed || !hasNextQuestion) return;
-    
-    // Call the onBuzz function passed from parent
-    onBuzz(teamId);
-    
-    setCooldown(true);
-    setQuestionStatus("buzzed");
-    
-    // Prevent double-clicks with a cooldown
-    setTimeout(() => {
-      if (hasNextQuestion) {
-        setCooldown(false);
-        setQuestionStatus("ready");
-      }
-    }, 2000);
+    // Trigger vibration if available
+    if (navigator.vibrate) {
+      navigator.vibrate(200);
+    }
+    onBuzz();
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-algerian-green-dark mb-2">{teamName}</h1>
-          <p className="text-gray-500">Game Code: {gameCode}</p>
+    <div className="app-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="font-bold text-lg">{teamName}</div>
+            <div className={`px-3 py-1 rounded-full text-xs font-medium
+              ${connectionStatus === 'connected' ? 'bg-green-100 text-green-800' : 
+                connectionStatus === 'connecting' ? 'bg-yellow-100 text-yellow-800' : 
+                'bg-red-100 text-red-800'}`}>
+              {connectionStatus === 'connected' ? 'Connected' : 
+               connectionStatus === 'connecting' ? 'Connecting...' : 
+               'Connection Error'}
+            </div>
+          </div>
+          
+          <div className="text-center mb-4">
+            <span className="text-sm text-gray-500">Game Code:</span>
+            <span className="text-lg font-bold ml-2">{gameCode}</span>
+          </div>
         </div>
+      </div>
+      
+      <div className="w-full max-w-md flex-1 flex flex-col items-center justify-center">
+        <motion.button
+          className={`w-56 h-56 rounded-full shadow-lg flex items-center justify-center
+            ${hasNextQuestion && !isBuzzed 
+              ? 'bg-algerian-red hover:bg-red-600 cursor-pointer' 
+              : 'bg-gray-300 cursor-not-allowed'}
+            transition-colors duration-300`}
+          onClick={hasNextQuestion && !isBuzzed ? handleBuzz : undefined}
+          whileHover={hasNextQuestion && !isBuzzed ? { scale: 1.05 } : {}}
+          whileTap={hasNextQuestion && !isBuzzed ? { scale: 0.95 } : {}}
+          animate={
+            isBuzzed 
+              ? { scale: [1, 1.03, 1], transition: { repeat: Infinity, duration: 1.5 } }
+              : {}
+          }
+        >
+          <span className="text-white text-2xl font-bold">
+            {isBuzzed ? "BUZZED!" : "BUZZ"}
+          </span>
+        </motion.button>
         
-        {!hasNextQuestion ? (
-          <div className="text-center p-6 bg-gray-100 rounded-lg mb-6">
-            <p className="text-lg font-medium">Waiting for the next question...</p>
-            <p>The host is preparing the next question.</p>
-          </div>
-        ) : isBuzzed && !isMyTurn ? (
-          <div className="text-center p-6 bg-gray-100 rounded-lg mb-6">
-            <p className="text-lg font-medium">The other team buzzed in first!</p>
-            <p>Please wait...</p>
-          </div>
-        ) : isMyTurn ? (
-          <div className="text-center p-6 bg-algerian-green/10 rounded-lg mb-6">
-            <p className="text-lg font-bold text-algerian-green-dark">It's your turn to answer!</p>
-            <p>Check the main screen for the question.</p>
-          </div>
-        ) : (
-          <motion.button
-            className={`
-              w-full h-40 rounded-full ${hasNextQuestion ? 'bg-algerian-green' : 'bg-gray-400'} text-white text-2xl font-bold
-              ${cooldown || !hasNextQuestion ? 'opacity-50 cursor-not-allowed' : 'hover:bg-algerian-green-dark'}
-            `}
-            whileHover={!cooldown && hasNextQuestion ? { scale: 1.05 } : {}}
-            whileTap={!cooldown && hasNextQuestion ? { scale: 0.95 } : {}}
-            onClick={handleBuzz}
-            disabled={cooldown || isBuzzed || !hasNextQuestion}
-          >
-            {hasNextQuestion ? "BUZZ!" : "Waiting..."}
-          </motion.button>
-        )}
-        
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">
-            {questionStatus === "ready" ? "Ready to buzz!" : 
-             questionStatus === "buzzed" ? "Buzzed in!" : 
-             questionStatus === "no_questions" ? "No question available" : "Waiting..."}
-          </p>
+        <div className="mt-6 text-center">
+          {isBuzzed ? (
+            <p className="font-medium text-algerian-green">Your team has buzzed in!</p>
+          ) : hasNextQuestion ? (
+            <p className="text-white">Ready to answer? Press the buzzer!</p>
+          ) : (
+            <p className="text-gray-300">Waiting for the next question...</p>
+          )}
         </div>
       </div>
     </div>

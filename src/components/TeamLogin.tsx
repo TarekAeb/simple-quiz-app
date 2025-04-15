@@ -1,43 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface TeamLoginProps {
   onLogin: (teamName: string, password: string) => void;
-  error?: string;
-  isLoading?: boolean;
+  error: string;
+  defaultTeamId?: number;
 }
 
-const TeamLogin: React.FC<TeamLoginProps> = ({ onLogin, error, isLoading = false }) => {
+const TeamLogin: React.FC<TeamLoginProps> = ({ onLogin, error, defaultTeamId }) => {
   const [teamName, setTeamName] = useState('');
   const [password, setPassword] = useState('');
   
+  // Pre-fill team name if we have a default team ID
+  useEffect(() => {
+    if (defaultTeamId !== undefined) {
+      setTeamName(`Team ${defaultTeamId + 1}`);
+    }
+  }, [defaultTeamId]);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (teamName.trim() && password.trim()) {
-      onLogin(teamName, password);
-    }
+    onLogin(teamName, password);
   };
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <motion.div 
-        className="w-full max-w-md bg-white rounded-xl shadow-lg p-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-algerian-green-dark">Team Login</h1>
-          <p className="text-gray-500 mt-2">Enter your team name and password to join the game</p>
-        </div>
+    <div className="app-background flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+        <h1 className="text-2xl font-bold text-algerian-green-dark mb-6 text-center">
+          Team Login
+        </h1>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="teamName">
-              Team Name
-            </label>
+            <label className="block text-sm font-medium mb-1">Team Name</label>
             <input
-              id="teamName"
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-algerian-green focus:border-algerian-green"
               value={teamName}
@@ -48,37 +44,32 @@ const TeamLogin: React.FC<TeamLoginProps> = ({ onLogin, error, isLoading = false
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-              Password
-            </label>
+            <label className="block text-sm font-medium mb-1">Password</label>
             <input
-              id="password"
               type="password"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-algerian-green focus:border-algerian-green"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="Enter team password"
               required
             />
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           </div>
-          
-          {error && (
-            <div className="text-error text-sm py-2">
-              {error}
-            </div>
-          )}
           
           <motion.button
             type="submit"
-            className="w-full bg-algerian-green text-white py-2 px-4 rounded-md font-medium mt-4 hover:bg-algerian-green-dark disabled:opacity-50"
+            className="w-full bg-algerian-green hover:bg-algerian-green-dark text-white px-6 py-3 rounded-lg font-medium"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            disabled={isLoading}
           >
-            {isLoading ? "Logging in..." : "Join Game"}
+            Join Game
           </motion.button>
         </form>
-      </motion.div>
+        
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <p>Ask your quiz master for the password</p>
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,112 +1,115 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import BuzzerService from '../hooks/BuzzerService';
 import TeamLogin from './TeamLogin';
 import TeamBuzzer from './TeamBuzzer';
-import BuzzerService from '../hooks/BuzzerService';
 
 const TeamRoutes: React.FC = () => {
-  const { gameCode } = useParams<{ gameCode: string }>();
+  const { gameCode, teamId } = useParams<{ gameCode: string; teamId?: string }>();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [teamData, setTeamData] = useState<{ teamName: string; teamId: number } | null>(null);
   const [error, setError] = useState('');
   const [isBuzzed, setIsBuzzed] = useState(false);
-  const [isMyTurn, setIsMyTurn] = useState(false);
   const [hasNextQuestion, setHasNextQuestion] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected'|'connecting'|'error'>('connecting');
+  const [buzzerService, setBuzzerService] = useState<BuzzerService | null>(null);
   
-  // Static passwords - not shown to users
+  // Get static passwords
   const getStaticPassword = (id: number) => {
     const passwords = ['TEAM1PWD', 'TEAM2PWD'];
     return passwords[id] || `TEAM${id+1}PWD`;
   };
   
-  // Handle team login
-  const handleLogin = async (teamName: string, password: string) => {
-    try {
-      // Check password against static passwords
-      let teamId = -1;
+  // Auto-login if teamId is provided
+  useEffect(() => {
+    if (teamId && gameCode) {
+      const numericTeamId = parseInt(teamId, 10);
       
-      if (password === getStaticPassword(0)) {
-        teamId = 0;
-      } else if (password === getStaticPassword(1)) {
-        teamId = 1;
-      } else {
-        setError('Invalid password');
-        return;
+      if (!isNaN(numericTeamId) && numericTeamId >= 0 && numericTeamId <= 1) {
+        // For auto-login, we still show the login screen but pre-fill data
+        console.log(`Team ID in URL: ${teamId} for game ${gameCode}`);
       }
+    }
+  }, [teamId, gameCode]);
+  
+  // Initialize BuzzerService when logged in
+  useEffect(() => {
+    if (isLoggedIn && teamData && gameCode) {
+      const service = BuzzerService.getInstance();
+      setBuzzerService(service);
       
-      if (gameCode) {
-        setConnectionStatus('connecting');
-        
-        // Initialize PeerJS client
-        const buzzerService = BuzzerService.getInstance();
-        
+      const initConnection = async () => {
         try {
-          await buzzerService.initClient(gameCode, teamId);
+          setConnectionStatus('connecting');
+          await service.initClient(gameCode, teamData.teamId);
+          setConnectionStatus('connected');
           
-          // Setup state update listener
-          buzzerService.on('stateUpdate', (gameState: any) => {
+          // Set up listeners
+          service.on('stateUpdate', (gameState: any) => {
             setHasNextQuestion(gameState.hasQuestions);
-            setIsMyTurn(gameState.activeTeam === teamId);
             setIsBuzzed(gameState.activeTeam !== null);
           });
           
-          buzzerService.on('connectionError', (err: Error) => {
-            setError(`Connection error: ${err.message}`);
-            setConnectionStatus('disconnected');
+          service.on('connectionError', (error: any) => {
+            console.error('Connection error:', error);
+            setConnectionStatus('error');
           });
           
-          setConnectionStatus('connected');
-          setTeamData({ teamName, teamId });
-          setIsLoggedIn(true);
-        } catch (err: any) {
-          setError(`Failed to connect: ${err.message}`);
-          setConnectionStatus('disconnected');
+        } catch (error) {
+          console.error('Failed to connect to host:', error);
+          setConnectionStatus('error');
         }
-      } else {
-        setError('No game code provided');
-      }
-    } catch (e) {
-      setError('Login failed. Please try again.');
+      };
+      
+      initConnection();
+      
+      return () => {
+        // Clean up on unmount
+        service.disconnect();
+      };
     }
-  };
+  }, [isLoggedIn, teamData, gameCode]);
   
-  // Handle buzzing in
-  const handleBuzz = (teamId: number) => {
-    if (!hasNextQuestion || isBuzzed) return;
+  // Handle login
+  const handleLogin = (teamName: string, password: string) => {
+    // For simplicity, check against our static passwords
+    const teamIndex = teamId ? parseInt(teamId, 10) : 
+                      password === getStaticPassword(0) ? 0 : 
+                      password === getStaticPassword(1) ? 1 : -1;
     
-    // Use BuzzerService to send buzz
-    const buzzerService = BuzzerService.getInstance();
-    const success = buzzerService.sendBuzz();
-    
-    if (success) {
-      setIsBuzzed(true);
+    if (teamIndex >= 0) {
+      setTeamData({
+        teamName: teamName || `Team ${teamIndex + 1}`,
+        teamId: teamIndex
+      });
+      setIsLoggedIn(true);
     } else {
-      setError('Failed to send buzz. Please try again.');
+      setError('Invalid password');
     }
   };
   
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      if (isLoggedIn) {
-        BuzzerService.getInstance().disconnect();
+  // Handle buzz
+  const handleBuzz = () => {
+    if (buzzerService && connectionStatus === 'connected' && hasNextQuestion && !isBuzzed) {
+      const success = buzzerService.sendBuzz();
+      if (success) {
+        setIsBuzzed(true);
       }
-    };
-  }, [isLoggedIn]);
+    }
+  };
   
-  // Show login form if not logged in
+  // If not logged in, show login screen
   if (!isLoggedIn) {
     return (
       <TeamLogin 
         onLogin={handleLogin} 
-        error={error} 
-        isLoading={connectionStatus === 'connecting'}
+        error={error}
+        defaultTeamId={teamId ? parseInt(teamId, 10) : undefined}
       />
     );
   }
   
-  // Show buzzer if logged in
+  // If logged in, show buzzer
   if (teamData) {
     return (
       <TeamBuzzer
@@ -115,13 +118,13 @@ const TeamRoutes: React.FC = () => {
         gameCode={gameCode || ''}
         onBuzz={handleBuzz}
         isBuzzed={isBuzzed}
-        isMyTurn={isMyTurn}
+        connectionStatus={connectionStatus}
         hasNextQuestion={hasNextQuestion}
       />
     );
   }
   
-  return null;
+  return <div>Loading...</div>;
 };
 
 export default TeamRoutes;
