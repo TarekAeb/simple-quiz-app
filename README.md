@@ -2,8 +2,6 @@
 
 A real-time interactive quiz application with turn-based and buzzer rounds, perfect for educational events and competitions. Built with React, TypeScript, PeerJS for real-time communication, and Tailwind CSS for styling.
 
-![Algeria Quiz Game](https://i.imgur.com/n6Lft1h.png)
-
 ## 🌟 Features
 
 - **Two Game Phases**:
@@ -68,7 +66,7 @@ A real-time interactive quiz application with turn-based and buzzer rounds, perf
    yarn dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+4. Open [http://localhost:3000](http://localhost:8080) in your browser.
 
 ### Configuration
 
