@@ -9,19 +9,24 @@ export interface Question {
   correctIndex: number;
 }
 
-export type GamePhase = 'login' | 'intro' | 'setup' | 'phase1' | 'phase2' | 'results';
+export type GamePhase = 'setup' | 'phase1' | 'phase2' | 'results';
 
 export interface GameState {
-  teams: [Team, Team];
-  currentTeam: 0 | 1;
+  phase: GamePhase;
+  teams: Team[];
+  currentTeam: number;
   currentQuestion: number;
-  timer: number;
   phase1Questions: Question[];
   phase2Questions: Question[];
-  selectedAnswer: number | null;
+  selectedAnswer: number;
   answerLocked: boolean;
-  gamePhase: GamePhase;
-  introSlide: number;
+  timer: number;
   activeTeamForPhase2: number | null;
-  isAuthenticated: boolean;
+  moderatorPassword: string; // Added the moderator password
+}
+
+export interface TeamCredential {
+  teamName: string;
+  password: string;
+  teamId: number;
 }

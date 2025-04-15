@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameState, Question } from '../lib/types';
+import TeamCredentialsGenerator from './TeamCredentialsGenerator';
+import { initBuzzerService, updateGameState } from '../hooks/BuzzerService';
+
+interface TeamCredential {
+  teamName: string;
+  password: string;
+  teamId: number;
+}
 
 interface Phase2ScreenProps {
   gameState: GameState;
@@ -16,14 +24,38 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
   completePhaseTwoAndShowResults
 }) => {
   const [showIntroSlide, setShowIntroSlide] = useState(true);
+  const [showCredentialsGenerator, setShowCredentialsGenerator] = useState(false);
+  const [teamCredentials, setTeamCredentials] = useState<TeamCredential[]>([]);
   const [incorrectSelections, setIncorrectSelections] = useState<number[]>([]);
   const [lastIncorrectTeam, setLastIncorrectTeam] = useState<number | null>(null);
+  const [gameCode, setGameCode] = useState<string>('');
+  const [connectedTeams, setConnectedTeams] = useState<number[]>([]);
+  
   const currentQuestion = gameState.phase2Questions[gameState.currentQuestion];
+  const hasQuestions = gameState.phase2Questions && 
+                     gameState.phase2Questions.length > 0 && 
+                     gameState.currentQuestion < gameState.phase2Questions.length;
+  
+  // Initialize buzzer service
+  useEffect(() => {
+    initBuzzerService();
+  }, []);
+  
+  // Update game state in BuzzerService whenever relevant state changes
+  useEffect(() => {
+    updateGameState({
+      activeTeam: gameState.activeTeamForPhase2,
+      hasQuestions: hasQuestions,
+      currentQuestion: gameState.currentQuestion,
+      timestamp: Date.now()
+    });
+  }, [hasQuestions, gameState.currentQuestion, gameState.activeTeamForPhase2]);
   
   // Skip intro slide if we're in the middle of phase 2
   useEffect(() => {
     if (gameState.currentQuestion > 0) {
       setShowIntroSlide(false);
+      setShowCredentialsGenerator(false);
     }
   }, [gameState.currentQuestion]);
   
@@ -32,6 +64,60 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
     setIncorrectSelections([]);
     setLastIncorrectTeam(null);
   }, [gameState.currentQuestion]);
+  
+  // Setup event listeners for remote team connections
+  useEffect(() => {
+    if (gameCode) {
+      // Listen for team buzz events
+      const handleTeamBuzz = (event: any) => {
+        const { teamId } = event.detail || {};
+        
+        // Only process if we have questions and answer isn't locked
+        if (hasQuestions && !gameState.answerLocked && teamId !== undefined) {
+          activateTeam(teamId);
+        }
+      };
+      
+      document.addEventListener('teamBuzz', handleTeamBuzz);
+      
+      // Tracking connected teams
+      const checkConnectedTeams = setInterval(() => {
+        const connected: number[] = [];
+        
+        // Check if teams are connected based on localStorage
+        if (localStorage.getItem('current_team') === '0') {
+          connected.push(0);
+        }
+        if (localStorage.getItem('current_team') === '1') {
+          connected.push(1);
+        }
+        
+        setConnectedTeams(connected);
+      }, 2000);
+      
+      return () => {
+        document.removeEventListener('teamBuzz', handleTeamBuzz);
+        clearInterval(checkConnectedTeams);
+      };
+    }
+  }, [gameCode, gameState.answerLocked, hasQuestions]);
+  
+  const handleGenerateCredentials = (credentials: TeamCredential[]) => {
+    setTeamCredentials(credentials);
+    
+    // Generate a random game code
+    const newGameCode = Math.random().toString(36).substring(2, 6).toUpperCase();
+    setGameCode(newGameCode);
+    
+    // Store credentials in localStorage for demo purposes
+    credentials.forEach(cred => {
+      localStorage.setItem(`team_cred_${cred.teamId}`, JSON.stringify(cred));
+    });
+  };
+  
+  const handleStartWithRemote = () => {
+    setShowCredentialsGenerator(false);
+  };
   
   // Phase 2 intro slide
   if (showIntroSlide) {
@@ -73,6 +159,7 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
           </motion.div>
           
           <motion.div
+            className="flex flex-col gap-4 items-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.2, duration: 0.5 }}
@@ -83,12 +170,76 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowIntroSlide(false)}
             >
+              <span>Use Keyboard Controls</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 18 6-6-6-6"/>
+              </svg>
+            </motion.button>
+            
+            <p className="text-gray-500">- or -</p>
+            
+            <motion.button
+              className="bg-secondary hover:bg-secondary-dark text-white px-8 py-4 rounded-lg font-medium text-lg flex items-center gap-2 mx-auto"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setShowIntroSlide(false);
+                setShowCredentialsGenerator(true);
+              }}
+            >
+              <span>Use Remote Buzzers</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M15.5 9H18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h2.5"/>
+                <circle cx="12" cy="6" r="3"/>
+              </svg>
+            </motion.button>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
+  
+  // Show credentials generator
+  if (showCredentialsGenerator) {
+    return (
+      <div className="w-full max-w-4xl">
+        <motion.div 
+          className="bg-white rounded-2xl shadow-xl p-10"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <TeamCredentialsGenerator 
+            onGenerateCredentials={handleGenerateCredentials}
+            teams={gameState.teams}
+          />
+          
+          <div className="flex justify-center mt-8">
+            <motion.button
+              className="bg-algerian-green hover:bg-algerian-green-dark text-white px-8 py-4 rounded-lg font-medium text-lg flex items-center gap-2 mx-auto"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleStartWithRemote}
+              disabled={teamCredentials.length === 0}
+            >
               <span>Start Phase 2</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
             </motion.button>
-          </motion.div>
+          </div>
+          
+          <div className="mt-4 text-center">
+            <button
+              className="text-gray-500 underline"
+              onClick={() => {
+                setShowCredentialsGenerator(false);
+                setShowIntroSlide(true);
+              }}
+            >
+              Go back
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -146,11 +297,30 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
     }
   };
   
+  // Display connected team indicators
+  const renderTeamConnectionStatus = () => {
+    return (
+      <div className="flex justify-between items-center mt-2">
+        {gameState.teams.map((team, index) => (
+          <div key={index} className="flex items-center gap-2">
+            <div 
+              className={`w-3 h-3 rounded-full ${connectedTeams.includes(index) ? 'bg-green-500' : 'bg-gray-300'}`}
+            ></div>
+            <span className="text-xs text-gray-500">
+              {team.name} {connectedTeams.includes(index) ? '(Connected)' : '(Waiting...)'}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+  
   return (
     <div className="w-full max-w-4xl space-y-6">
       {/* Phase indicator */}
       <div className="bg-secondary text-white py-2 px-4 rounded-lg text-center font-medium">
-        Phase 2: Speed Round - Teams alternate until someone gets the correct answer!
+        <div>Phase 2: Speed Round - Teams alternate until someone gets the correct answer!</div>
+        {gameCode && renderTeamConnectionStatus()}
       </div>
       
       {/* Scoreboard */}
@@ -188,7 +358,7 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
       <div className="flex justify-center gap-8">
         <motion.button
           className={`
-            px-6 py-3 rounded-lg font-bold text-slate-500
+            px-6 py-3 rounded-lg font-bold 
             ${gameState.answerLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/10'}
             ${lastIncorrectTeam === 0 ? 'bg-error/10 text-error' : ''}
           `}
@@ -202,7 +372,7 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
         
         <motion.button
           className={`
-            px-6 py-3 rounded-lg font-bold text-slate-500
+            px-6 py-3 rounded-lg font-bold
             ${gameState.answerLocked ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/10'}
             ${lastIncorrectTeam === 1 ? 'bg-error/10 text-error' : ''}
           `}
@@ -278,7 +448,7 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
         
         {gameState.activeTeamForPhase2 === null && !gameState.answerLocked && (
           <motion.div 
-            className="text-center text-lg font-medium text-slate-500"
+            className="text-center text-lg font-medium"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
