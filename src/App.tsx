@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Game from './components/Game';
 import TeamRoutes from './components/TeamRoutes';
-// Other imports
 
 function App() {
   return (
@@ -9,7 +8,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Game />} />
         <Route path="/join/:gameCode" element={<TeamRoutes />} />
-        {/* Other routes */}
+        <Route path="/join/:gameCode/:teamId" element={<TeamRoutes />} />
       </Routes>
     </BrowserRouter>
   );
