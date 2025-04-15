@@ -16,7 +16,7 @@ const TeamRoutes: React.FC = () => {
   
   // Get static passwords
   const getStaticPassword = (id: number) => {
-    const passwords = ['m2PTeMa', 'm2PTeMa'];
+    const passwords = ['m1PTeMa', 'm2PTeMa'];
     return passwords[id] || `m${id+1}PTeMa`;
   };
   

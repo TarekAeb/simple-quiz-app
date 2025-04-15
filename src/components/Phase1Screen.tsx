@@ -293,7 +293,7 @@ const Phase1Screen: React.FC<Phase1ScreenProps> = ({
   );
 
   return (
-    <div className="w-full space-y-6 relative">
+    <div className="w-full space-y-6 relative max-w-5xl">
       {!isHost && <ConnectionIndicator />}
       
       {/* Phase indicator */}
