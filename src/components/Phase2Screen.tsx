@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GameState, Question } from '../lib/types';
 import TeamCredentialsGenerator from './TeamCredentialsGenerator';
-import { initBuzzerService, updateGameState } from '../hooks/BuzzerService';
+import BuzzerService from '../hooks/BuzzerService';
 
 interface TeamCredential {
   teamName: string;
@@ -36,21 +36,21 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
                      gameState.phase2Questions.length > 0 && 
                      gameState.currentQuestion < gameState.phase2Questions.length;
   
-  // Initialize buzzer service
-  useEffect(() => {
-    initBuzzerService();
-  }, []);
-  
-  // Update game state in BuzzerService whenever relevant state changes
-  useEffect(() => {
-    updateGameState({
-      activeTeam: gameState.activeTeamForPhase2,
-      hasQuestions: hasQuestions,
-      currentQuestion: gameState.currentQuestion,
-      timestamp: Date.now()
-    });
-  }, [hasQuestions, gameState.currentQuestion, gameState.activeTeamForPhase2]);
-  
+                     useEffect(() => {
+                      const buzzerService = BuzzerService.getInstance();
+                      
+                      const handleBuzz = (buzzData: { teamId: number; timestamp: number }) => {
+                        if (!gameState.answerLocked && hasQuestions) {
+                          activateTeam(buzzData.teamId);
+                        }
+                      };
+                      
+                      buzzerService.on('buzz', handleBuzz);
+                      
+                      return () => {
+                        buzzerService.off('buzz', handleBuzz);
+                      };
+                    }, [gameState.answerLocked, hasQuestions]);
   // Skip intro slide if we're in the middle of phase 2
   useEffect(() => {
     if (gameState.currentQuestion > 0) {

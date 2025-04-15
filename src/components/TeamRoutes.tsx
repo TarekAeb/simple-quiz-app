@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import TeamLogin from './TeamLogin';
 import TeamBuzzer from './TeamBuzzer';
-import { teamBuzz, hasAvailableQuestions, isTeamActive } from '../hooks/BuzzerService';
+import BuzzerService from '../hooks/BuzzerService';
 
 const TeamRoutes: React.FC = () => {
   const { gameCode } = useParams<{ gameCode: string }>();
@@ -12,6 +12,7 @@ const TeamRoutes: React.FC = () => {
   const [isBuzzed, setIsBuzzed] = useState(false);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [hasNextQuestion, setHasNextQuestion] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   
   // Static passwords - not shown to users
   const getStaticPassword = (id: number) => {
@@ -20,20 +21,50 @@ const TeamRoutes: React.FC = () => {
   };
   
   // Handle team login
-  const handleLogin = (teamName: string, password: string) => {
+  const handleLogin = async (teamName: string, password: string) => {
     try {
+      // Check password against static passwords
+      let teamId = -1;
+      
       if (password === getStaticPassword(0)) {
-        const team0 = JSON.parse(localStorage.getItem('team_cred_0') || '{}');
-        setTeamData({ teamName: team0.teamName || "Team 1", teamId: 0 });
-        setIsLoggedIn(true);
-        localStorage.setItem('current_team', '0');
+        teamId = 0;
       } else if (password === getStaticPassword(1)) {
-        const team1 = JSON.parse(localStorage.getItem('team_cred_1') || '{}');
-        setTeamData({ teamName: team1.teamName || "Team 2", teamId: 1 });
-        setIsLoggedIn(true);
-        localStorage.setItem('current_team', '1');
+        teamId = 1;
       } else {
         setError('Invalid password');
+        return;
+      }
+      
+      if (gameCode) {
+        setConnectionStatus('connecting');
+        
+        // Initialize PeerJS client
+        const buzzerService = BuzzerService.getInstance();
+        
+        try {
+          await buzzerService.initClient(gameCode, teamId);
+          
+          // Setup state update listener
+          buzzerService.on('stateUpdate', (gameState: any) => {
+            setHasNextQuestion(gameState.hasQuestions);
+            setIsMyTurn(gameState.activeTeam === teamId);
+            setIsBuzzed(gameState.activeTeam !== null);
+          });
+          
+          buzzerService.on('connectionError', (err: Error) => {
+            setError(`Connection error: ${err.message}`);
+            setConnectionStatus('disconnected');
+          });
+          
+          setConnectionStatus('connected');
+          setTeamData({ teamName, teamId });
+          setIsLoggedIn(true);
+        } catch (err: any) {
+          setError(`Failed to connect: ${err.message}`);
+          setConnectionStatus('disconnected');
+        }
+      } else {
+        setError('No game code provided');
       }
     } catch (e) {
       setError('Login failed. Please try again.');
@@ -42,53 +73,40 @@ const TeamRoutes: React.FC = () => {
   
   // Handle buzzing in
   const handleBuzz = (teamId: number) => {
-    if (!hasNextQuestion) return;
+    if (!hasNextQuestion || isBuzzed) return;
     
-    // Use the teamBuzz function from BuzzerService
-    const success = teamBuzz(teamId, gameCode || '');
+    // Use BuzzerService to send buzz
+    const buzzerService = BuzzerService.getInstance();
+    const success = buzzerService.sendBuzz();
     
     if (success) {
       setIsBuzzed(true);
+    } else {
+      setError('Failed to send buzz. Please try again.');
     }
   };
   
-  // Listen for game state changes
+  // Clean up on unmount
   useEffect(() => {
-    if (isLoggedIn && teamData) {
-      const checkGameState = setInterval(() => {
-        try {
-          // Check if questions are available
-          const hasQuestions = hasAvailableQuestions();
-          setHasNextQuestion(hasQuestions);
-          
-          // Check if this team is active
-          const isActive = isTeamActive(teamData.teamId);
-          setIsMyTurn(isActive);
-          
-          // Check if any team is active
-          if (isActive) {
-            setIsBuzzed(true);
-          } else {
-            // Check the game state from localStorage
-            const gameStateJSON = localStorage.getItem('game_state');
-            if (gameStateJSON) {
-              const gameState = JSON.parse(gameStateJSON);
-              setIsBuzzed(gameState.activeTeam !== null);
-            }
-          }
-        } catch (e) {
-          console.error("Error checking game state:", e);
-        }
-      }, 500); // Check every 500ms
-      
-      return () => clearInterval(checkGameState);
-    }
-  }, [isLoggedIn, teamData]);
+    return () => {
+      if (isLoggedIn) {
+        BuzzerService.getInstance().disconnect();
+      }
+    };
+  }, [isLoggedIn]);
   
+  // Show login form if not logged in
   if (!isLoggedIn) {
-    return <TeamLogin onLogin={handleLogin} error={error} />;
+    return (
+      <TeamLogin 
+        onLogin={handleLogin} 
+        error={error} 
+        isLoading={connectionStatus === 'connecting'}
+      />
+    );
   }
   
+  // Show buzzer if logged in
   if (teamData) {
     return (
       <TeamBuzzer
