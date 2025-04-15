@@ -12,7 +12,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onAuthenticated }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   
   // Correct password - in a real app, this would be verified server-side
-  const correctPassword = 'M3alma3youmalilm2025';
+  const correctPassword = 'M3alma3l3ilmcombi';
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

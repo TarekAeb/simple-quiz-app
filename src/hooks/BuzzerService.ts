@@ -203,27 +203,34 @@ class BuzzerService {
   }
 
   // Broadcast game state to all connected teams
-  public broadcastGameState(gameState: any): void {
-    if (!this.isHost) return;
-    
-    const message: BuzzerMessage = {
-      type: 'GAME_STATE_UPDATE',
-      payload: {
-        activeTeam: gameState.activeTeamForPhase2,
-        hasQuestions: gameState.hasQuestions,
-        currentQuestion: gameState.currentQuestion,
-        timestamp: Date.now()
-      }
-    };
-    
-    this.connections.forEach((conn) => {
-      try {
-        conn.send(message);
-      } catch (error) {
-        console.error('Failed to broadcast game state:', error);
-      }
-    });
-  }
+// In the broadcastGameState method
+public broadcastGameState(gameState: any): void {
+  if (!this.isHost) return;
+  
+  // Create a simpler message format with explicit hasQuestions flag
+  const message: BuzzerMessage = {
+    type: 'GAME_STATE_UPDATE',
+    payload: {
+      activeTeam: gameState.activeTeam,
+      // CRITICAL FIX: Always include hasQuestions explicitly
+      hasQuestions: gameState.hasQuestions === undefined ? 
+        true : Boolean(gameState.hasQuestions),
+      currentQuestion: gameState.currentQuestion,
+      phase: gameState.phase || 'phase2',
+      timestamp: Date.now()
+    }
+  };
+  
+  console.log("Broadcasting game state:", message.payload);
+  
+  this.connections.forEach((conn) => {
+    try {
+      conn.send(message);
+    } catch (error) {
+      console.error('Failed to broadcast game state:', error);
+    }
+  });
+}
 
   // Send message to host
   private sendToHost(message: BuzzerMessage): void {

@@ -4,6 +4,7 @@ import { GameState } from "../lib/types";
 import Timer from "./Timer";
 import TeamCredentialsGenerator from "./TeamCredentialsGenerator";
 import { QRCodeSVG } from 'qrcode.react';
+import BuzzerService from "../hooks/BuzzerService";
 
 interface Phase2ScreenProps {
   gameState: GameState;
@@ -28,7 +29,30 @@ const Phase2Screen: React.FC<Phase2ScreenProps> = ({
   const skipTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const currentQuestion = gameState.phase2Questions[gameState.currentQuestion];
-
+  useEffect(() => {
+    console.log("Phase2Screen - Current question:", gameState.currentQuestion);
+    console.log("Phase2Screen - Has questions:", gameState.phase2Questions && 
+      gameState.phase2Questions.length > 0 &&
+      gameState.currentQuestion < gameState.phase2Questions.length);
+    
+    // Force broadcast an initial game state
+    if (gameCode && connectedTeams.length > 0) {
+      const buzzerService = BuzzerService.getInstance();
+      const hasQuestions = gameState.phase2Questions && 
+        gameState.phase2Questions.length > 0 &&
+        gameState.currentQuestion < gameState.phase2Questions.length;
+      
+      console.log("Broadcasting initial game state, hasQuestions:", hasQuestions);
+      
+      buzzerService.broadcastGameState({
+        phase: gameState.phase,
+        activeTeam: gameState.activeTeamForPhase2,
+        hasQuestions: hasQuestions,
+        currentQuestion: gameState.currentQuestion,
+        timestamp: Date.now()
+      });
+    }
+  }, [gameState.currentQuestion, connectedTeams.length, gameCode]);
   // Set up skip timer when a team buzzes in
   useEffect(() => {
     // If a team is active (has buzzed in)
